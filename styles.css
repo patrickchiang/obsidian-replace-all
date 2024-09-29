@@ -1,0 +1,38 @@
+.search-input-container input ~ .input-right-decorator-2 {
+    inset-inline-end: calc((var(--size-4-1) + 28px) * 2);
+}
+
+.input-right-decorator-2 {
+    position: absolute;
+    transform: translateY(-50%);
+    top: 50%;
+    font-size: var(--font-ui-small);
+}
+
+.search-replace-all-row {
+    display: flex;
+    margin-left: var(--size-4-3);
+    margin-right: var(--size-4-3);
+}
+
+.search-replace-all-submit {
+    margin-left: 5px;
+}
+
+.search-replace-all-icon {
+    height: var(--search-icon-size);
+    width: var(--search-icon-size);
+    position: absolute;
+    margin-left: 8px;
+    margin-top: 6px;
+}
+
+.workspace-leaf-content .search-replace-all-input {
+    display: block;
+    width: 100%;
+    padding-inline-start: 36px;
+}
+
+.hide-replace-all-row {
+    display: none;
+}
