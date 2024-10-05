@@ -7,9 +7,8 @@ Replace All is an Obsidian plugin that injects replace all functionality directl
 ## Usage
 
 1. Use the built-in Obsidian find to find instances to replace.
-2. Press the "Replace all" button in the input box.
-3. Enter the replacement string.
-4. Press Enter.
+2. Enter the replacement string in the input box.
+3. Press Enter.
 
 **Undo replace all**: Use the command palette (Ctrl+P or Cmd+P) and search for "Undo replace all" to undo all changes applied by the previous replacement.
 

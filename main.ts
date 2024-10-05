@@ -10,15 +10,34 @@ interface SavedFileState {
 }
 
 type SearchView = View & {
-	searchComponent: { containerEl: HTMLElement }
+	searchParamsContainerEl: HTMLElement;
 	dom: { resultDomLookup: Map<TFile, { result: { content: number[][] } }> }
 };
+
+interface ReplaceAllPluginSettings {
+	replaceAllOn: boolean;
+}
+
+const DEFAULT_SETTINGS: ReplaceAllPluginSettings = {
+	replaceAllOn: true
+}
 
 export default class ReplaceAllPlugin extends Plugin {
 	searchView: SearchView;
 	saveState: SavedState | undefined;
+	settings: ReplaceAllPluginSettings;
+
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
 
 	async onload() {
+		await this.loadSettings();
+
 		let retries = 0;
 		const timedRetry = async () => {
 			// wait for search leaf
@@ -62,25 +81,55 @@ export default class ReplaceAllPlugin extends Plugin {
 	}
 
 	async init() {
-		const searchView = this.searchView;
-		const searchBox = searchView.searchComponent.containerEl;
 		this.initReplaceAllRow();
-
-		searchBox.appendChild(this.createReplaceAllButton());
+		this.createReplaceAllButton();
 	}
 
-	createReplaceAllButton(): HTMLElement {
-		const button = document.createElement('div');
+	createReplaceAllButton() {
+		const searchView = this.searchView;
+		const replaceAllParam = document.createElement('div');
+		replaceAllParam.classList.add('setting-item');
+		replaceAllParam.classList.add('mod-toggle');
 
-		button.classList.add('search-replace-all');
-		button.classList.add('input-right-decorator-2');
-		button.classList.add('clickable-icon');
-		button.setAttribute('aria-label', 'Replace all');
-		button.textContent = 'Replace all';
+		const replaceAllParamInfo = document.createElement('div');
+		replaceAllParamInfo.classList.add('setting-item-info');
 
-		button.addEventListener('click', this.toggleReplaceAllRow.bind(this));
+		const replaceAllParamLabel = document.createElement('div');
+		replaceAllParamLabel.classList.add('setting-item-name');
+		replaceAllParamLabel.textContent = 'Replace all';
 
-		return button;
+		const replaceAllParamControl = document.createElement('div');
+		replaceAllParamControl.classList.add('setting-item-control');
+
+		const replaceAllParamCheckboxContainer = document.createElement('div');
+		replaceAllParamCheckboxContainer.classList.add('checkbox-container');
+		replaceAllParamCheckboxContainer.classList.add('mod-small');
+
+		if (this.settings.replaceAllOn) {
+			replaceAllParamCheckboxContainer.classList.add('is-enabled');
+		}
+
+		replaceAllParamCheckboxContainer.addEventListener('click', (event) => {
+			replaceAllParamCheckboxContainer.classList.toggle('is-enabled');
+			this.toggleReplaceAllRow();
+
+			this.settings.replaceAllOn = !this.settings.replaceAllOn;
+			this.saveSettings();
+		});
+
+		const replaceAllParamCheckbox = document.createElement('input');
+		replaceAllParamCheckbox.type = 'checkbox';
+
+		replaceAllParamInfo.appendChild(replaceAllParamLabel);
+
+		replaceAllParamCheckboxContainer.appendChild(replaceAllParamCheckbox);
+		replaceAllParamControl.appendChild(replaceAllParamCheckboxContainer);
+
+		replaceAllParam.appendChild(replaceAllParamInfo);
+		replaceAllParam.appendChild(replaceAllParamControl);
+
+		const requestParams = searchView.searchParamsContainerEl;
+		requestParams.appendChild(replaceAllParam);
 	}
 
 	toggleReplaceAllRow() {
@@ -116,7 +165,6 @@ export default class ReplaceAllPlugin extends Plugin {
 		replaceAllField.addEventListener('keydown', this.replaceAllKey.bind(this));
 		replaceAllRow.appendChild(replaceAllField);
 
-
 		const replaceAllSubmit = document.createElement('div');
 		replaceAllSubmit.classList.add('search-replace-all-submit');
 		replaceAllSubmit.classList.add('clickable-icon');
@@ -126,8 +174,9 @@ export default class ReplaceAllPlugin extends Plugin {
 		replaceAllRow.appendChild(replaceAllSubmit);
 
 		searchRow?.insertAdjacentElement('afterend', replaceAllRow);
-
-		replaceAllRow.classList.add('hide-replace-all-row');
+		if (!this.settings.replaceAllOn) {
+			replaceAllRow.classList.add('hide-replace-all-row');
+		}
 	}
 
 	async replaceAllKey(event: KeyboardEvent) {
@@ -144,7 +193,7 @@ export default class ReplaceAllPlugin extends Plugin {
 		const replaceField = searchView.containerEl.querySelector('.search-replace-all-input') as HTMLInputElement;
 
 		let replacements = 0;
-		const searchResults = searchView.dom.resultDomLookup;
+		const searchResults = new Map(searchView.dom.resultDomLookup);
 		const vault = this.app.vault;
 		this.saveState = { fileStates: [] };
 		for (const [key, value] of searchResults.entries()) {

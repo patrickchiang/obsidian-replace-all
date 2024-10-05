@@ -1,4 +1,4 @@
-.search-input-container input ~ .input-right-decorator-2 {
+.search-input-container input~.input-right-decorator-2 {
     inset-inline-end: calc((var(--size-4-1) + 28px) * 2);
 }
 
@@ -25,6 +25,10 @@
     position: absolute;
     margin-left: 8px;
     margin-top: 6px;
+}
+
+input.search-replace-all-input {
+    cursor: text;
 }
 
 .workspace-leaf-content .search-replace-all-input {
