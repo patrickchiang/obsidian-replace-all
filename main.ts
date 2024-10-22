@@ -1,4 +1,4 @@
-import { Editor, EditorSelectionOrCaret, Notice, Plugin, setIcon, TFile, View } from 'obsidian';
+import { Editor, EditorSelectionOrCaret, Notice, Plugin, requireApiVersion, setIcon, TFile, View } from 'obsidian';
 
 interface SavedState {
 	fileStates: SavedFileState[];
@@ -38,28 +38,6 @@ export default class ReplaceAllPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		let retries = 0;
-		const timedRetry = async () => {
-			// wait for search leaf
-			const searchLeaves = this.app.workspace.getLeavesOfType('search');
-			if (!searchLeaves || searchLeaves.length === 0) {
-				if (retries > 20) {
-					new Notice('Failed to initialize headings plugin.');
-					return;
-				} else {
-					retries++;
-					setTimeout(timedRetry, 1000);
-					return;
-				}
-			}
-
-			const searchLeaf = searchLeaves[0];
-			const searchView = await searchLeaf.open(searchLeaf.view) as SearchView;
-			this.searchView = searchView;
-			this.init();
-		};
-		timedRetry();
-
 		this.addCommand({
 			id: 'restore-replace-all',
 			name: 'Undo replace all',
@@ -76,6 +54,25 @@ export default class ReplaceAllPlugin extends Plugin {
 				new Notice(`Changes in ${this.saveState.fileStates.length} files undone.`);
 
 				this.saveState = undefined;
+			}
+		});
+
+		this.app.workspace.onLayoutReady(async () => {
+			const searchLeaves = this.app.workspace.getLeavesOfType('search');
+
+			for (const searchLeaf of searchLeaves) {
+				if (requireApiVersion('1.7.2')) {
+					await searchLeaf.loadIfDeferred();
+				}
+
+				if (!searchLeaf) {
+					new Notice('Search view not found.');
+					return;
+				}
+
+				const searchView = await searchLeaf.open(searchLeaf.view) as SearchView;
+				this.searchView = searchView;
+				this.init();
 			}
 		});
 	}
