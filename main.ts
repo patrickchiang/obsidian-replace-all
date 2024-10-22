@@ -65,7 +65,7 @@ export default class ReplaceAllPlugin extends Plugin {
 					await searchLeaf.loadIfDeferred();
 				}
 
-				if (!searchLeaf) {
+				if (!searchLeaf.view) {
 					new Notice('Search view not found.');
 					return;
 				}
